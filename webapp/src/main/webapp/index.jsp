@@ -3,7 +3,7 @@
 <h2> Glad to see you here </h2>
 <h2> Deploying on VM </h2>
 <h2> This is the day that the Lord has made </h2
-<2>> Thank God that I got this awesome job with good benefits and no work on weekends with good managers and opportunity to learn.</h2>
+<2>> I see the goodness of God Thank God that I got this awesome job with good benefits and no work on weekends with good managers and opportunity to learn.</h2>
 
 <Host appBase="webapps"
            autoDeploy="false" name="localhost" unpackWARs="true"
