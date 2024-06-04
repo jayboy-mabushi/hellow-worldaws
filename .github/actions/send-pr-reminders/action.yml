@@ -1,15 +1,15 @@
-name: 'Pull request reviewer reminder action'
-description: 'Action to send reminder emails to reviewers when there are overdue pull requests pending'
+name: 'Send PR Review Reminders'
+description: 'A custom action to send PR review reminders.'
 inputs:
   github_token:
-  required: true
-  description: 'GitHub token'
-reminder_message:
-  required: true
-  description: 'Message to send to reviewers on Github'
-review_turnaround_hours:
-  required: true
-  description: 'This is the deadline for reviews. If this time is exceeded, a reminder will be sent'
+    description: 'GitHub token'
+    required: true
+  reminder_message:
+    description: 'Reminder message'
+    required: true
+  review_turnaround_hours:
+    description: 'Review turnaround time in hours'
+    required: true
 runs:
-  using: 'node20'
+  using: 'node18'
   main: 'index.js'
