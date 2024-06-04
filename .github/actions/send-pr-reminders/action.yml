@@ -11,5 +11,5 @@ review_turnaround_hours:
   required: true
   description: 'This is the deadline for reviews. If this time is exceeded, a reminder will be sent'
 runs:
-  using: 'node18'
+  using: 'node20'
   main: 'index.js'
