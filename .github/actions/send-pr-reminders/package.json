@@ -1,0 +1,13 @@
+{
+    "name": "send-pr-reminders",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+      "start": "node index.js"
+    },
+    "dependencies": {
+      "@actions/core": "1.2.6",
+      "@actions/github": "4.0.0"
+    }
+  }
+  
