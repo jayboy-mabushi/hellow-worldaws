@@ -16,5 +16,5 @@ jobs:
       uses: ./.github/actions/send-pr-reminders
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        reminder_message: 'Please review this PR.'
+        reminder_message: "Please review this PR."
         review_turnaround_hours: 1

@@ -10,7 +10,6 @@ inputs:
   review_turnaround_hours:
     description: 'Review turnaround time in hours'
     required: true
-
 runs:
   using: 'node16'
   main: 'index.js'
