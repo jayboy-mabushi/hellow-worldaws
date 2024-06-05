@@ -1,3 +1,19 @@
+# name: 'Send PR Review Reminders'
+# description: 'An action to send PR review reminders'
+# inputs:
+#   github_token:
+#     description: 'GitHub Token'
+#     required: true
+#   reminder_message:
+#     description: 'Reminder message to send'
+#     required: true
+#   review_turnaround_hours:
+#     description: 'Review turnaround time in hours'
+#     required: true
+# runs:
+#   using: 'node16'
+#   main: 'index.js'
+
 name: 'Send PR Review Reminders'
 description: 'An action to send PR review reminders'
 inputs:
@@ -7,8 +23,8 @@ inputs:
   reminder_message:
     description: 'Reminder message to send'
     required: true
-  review_turnaround_hours:
-    description: 'Review turnaround time in hours'
+  review_turnaround_minutes: # Changed from hours to minutes
+    description: 'Review turnaround time in minutes'
     required: true
 runs:
   using: 'node16'
