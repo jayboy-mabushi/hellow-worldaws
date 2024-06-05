@@ -1,15 +1,16 @@
 name: 'Send PR Review Reminders'
-description: 'A custom action to send PR review reminders.'
+description: 'An action to send PR review reminders'
 inputs:
   github_token:
-    description: 'GitHub token'
+    description: 'GitHub Token'
     required: true
   reminder_message:
-    description: 'Reminder message'
+    description: 'Reminder message to send'
     required: true
   review_turnaround_hours:
     description: 'Review turnaround time in hours'
     required: true
+
 runs:
-  using: 'node20'
+  using: 'node16'
   main: 'index.js'
