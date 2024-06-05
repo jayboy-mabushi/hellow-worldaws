@@ -163,7 +163,6 @@
 
 // run();
 
-
 const core = require("@actions/core");
 const github = require("@actions/github");
 
@@ -171,7 +170,7 @@ async function run() {
   try {
     const octokit = github.getOctokit(core.getInput("github_token"));
     const reminderMessage = core.getInput("reminder_message");
-    const reviewTurnaroundMinutes = parseInt(core.getInput("review_turnaround_minutes"), 10); // Changed from hours to minutes
+    const reviewTurnaroundMinutes = parseInt(core.getInput("review_turnaround_minutes"), 10);
 
     const { data: pullRequests } = await octokit.rest.pulls.list({
       ...github.context.repo,
@@ -253,7 +252,7 @@ async function run() {
       }
 
       const currentTime = new Date().getTime();
-      const reviewByTime = mostRecentReviewRequest.getTime() + 1000 * 60 * reviewTurnaroundMinutes; // Changed calculation to use minutes
+      const reviewByTime = mostRecentReviewRequest.getTime() + 1000 * 60 * reviewTurnaroundMinutes;
 
       core.info(`currentTime: ${currentTime} reviewByTime: ${reviewByTime}`);
       if (currentTime < reviewByTime) {
@@ -268,7 +267,7 @@ async function run() {
         ? new Date(reminderComments[0].createdAt)
         : null;
 
-      if (mostRecentReminderComment && mostRecentReminderComment.getTime() > mostRecentReviewRequest.getTime()) {
+      if (mostRecentReminderComment && mostRecentReminderComment.getTime() + 1000 * 60 * reviewTurnaroundMinutes > currentTime) {
         continue;
       }
 
@@ -289,4 +288,3 @@ async function run() {
 }
 
 run();
-
