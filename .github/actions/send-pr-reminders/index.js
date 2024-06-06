@@ -46,6 +46,9 @@
 //                 nodes {
 //                   body
 //                   createdAt
+//                   author {
+//                     login
+//                   }
 //                 }
 //               }
 //             }
@@ -68,11 +71,19 @@
 //       }
 
 //       const mostRecentReviewRequest = new Date(reviewRequestEvents[0].createdAt);
-//       const reviewsAfterRequest = pullRequestResponse.repository.pullRequest.reviews.nodes.filter(
-//         (review) => new Date(review.createdAt) > mostRecentReviewRequest
+
+//       const reviewsAndComments = [
+//         ...pullRequestResponse.repository.pullRequest.reviews.nodes,
+//         ...pullRequestResponse.repository.pullRequest.comments.nodes
+//       ];
+
+//       const reviewsAndCommentsAfterRequest = reviewsAndComments.filter(
+//         (item) => new Date(item.createdAt) > mostRecentReviewRequest
 //       );
 
-//       const reviewersWhoReviewed = reviewsAfterRequest.map((review) => review.author.login);
+//       const reviewersWhoReviewedOrCommented = reviewsAndCommentsAfterRequest.map(
+//         (item) => item.author.login
+//       );
 
 //       const { data: pullRequest } = await octokit.rest.pulls.get({
 //         ...github.context.repo,
@@ -80,7 +91,7 @@
 //       });
 
 //       const reviewersToRemind = pullRequest.requested_reviewers.filter(
-//         (rr) => !reviewersWhoReviewed.includes(rr.login)
+//         (rr) => !reviewersWhoReviewedOrCommented.includes(rr.login)
 //       );
 
 //       if (reviewersToRemind.length === 0) {
@@ -196,18 +207,21 @@ async function run() {
         continue;
       }
 
-      const mostRecentReviewRequest = new Date(reviewRequestEvents[0].createdAt);
+      // Get the latest event (could be review request or new commit)
+      const latestEventTime = new Date(
+        Math.max(...reviewRequestEvents.map(event => new Date(event.createdAt).getTime()))
+      );
 
       const reviewsAndComments = [
         ...pullRequestResponse.repository.pullRequest.reviews.nodes,
         ...pullRequestResponse.repository.pullRequest.comments.nodes
       ];
 
-      const reviewsAndCommentsAfterRequest = reviewsAndComments.filter(
-        (item) => new Date(item.createdAt) > mostRecentReviewRequest
+      const reviewsAndCommentsAfterLatestEvent = reviewsAndComments.filter(
+        (item) => new Date(item.createdAt) > latestEventTime
       );
 
-      const reviewersWhoReviewedOrCommented = reviewsAndCommentsAfterRequest.map(
+      const reviewersWhoReviewedOrCommented = reviewsAndCommentsAfterLatestEvent.map(
         (item) => item.author.login
       );
 
@@ -225,7 +239,7 @@ async function run() {
       }
 
       const currentTime = new Date().getTime();
-      const reviewByTime = mostRecentReviewRequest.getTime() + 1000 * 60 * reviewTurnaroundMinutes;
+      const reviewByTime = latestEventTime.getTime() + 1000 * 60 * reviewTurnaroundMinutes;
 
       core.info(`currentTime: ${currentTime} reviewByTime: ${reviewByTime}`);
       if (currentTime < reviewByTime) {
@@ -261,4 +275,3 @@ async function run() {
 }
 
 run();
-
