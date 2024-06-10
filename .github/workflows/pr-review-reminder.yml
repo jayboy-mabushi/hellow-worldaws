@@ -24,7 +24,7 @@ name: PR Review Reminder
 
 on:
   schedule:
-  - cron: "*/5 * * * *" # Runs every 5 minutes for testing
+  - cron: "*/30 * * * *" # Runs every 5 minutes for testing
   workflow_dispatch:
 
 jobs:
@@ -39,5 +39,5 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         reminder_message: 'Please review this PR.'
-        review_turnaround_minutes: 5
+        review_turnaround_minutes: 1
 
