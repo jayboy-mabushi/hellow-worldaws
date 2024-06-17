@@ -319,7 +319,6 @@ async function run() {
       }
 
       // Post individual comments to each reviewer who has not reviewed or commented
-      // This section is modified to send individual notifications
       for (const reviewer of reviewersToRemind) {
         const addReminderComment = `@${reviewer.login} \n${reminderMessage}`;
 
@@ -332,7 +331,7 @@ async function run() {
 
         // Log the creation of the reminder comment
         core.info(`Created comment on issue_number: ${pullRequest.number} body: ${addReminderComment}`);
-      } // End of modified section
+      }
     }
   } catch (error) {
     // If there is an error, set the action to failed and log the error message
