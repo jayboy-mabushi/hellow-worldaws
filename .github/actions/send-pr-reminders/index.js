@@ -179,8 +179,6 @@ async function run() {
   try {
     // Get the GitHub token from the input
     const octokit = github.getOctokit(core.getInput("github_token"));
-    // Get the reminder message from the input
-    const reminderMessage = core.getInput("reminder_message");
     // Get the review turnaround time in hours from the input and parse it as an integer
     const reviewTurnaroundHours = parseInt(core.getInput("review_turnaround_hours"), 10);
 
@@ -305,7 +303,7 @@ async function run() {
 
       // Filter reminder comments to only include those with the reminder message
       const reminderComments = pullRequestResponse.repository.pullRequest.comments.nodes.filter(
-        (node) => node.body.includes(reminderMessage)
+        (node) => node.body.includes("Reminder:")
       );
 
       // Get the most recent reminder comment, if any
@@ -318,9 +316,23 @@ async function run() {
         continue;
       }
 
+      // Calculate the time elapsed since the latest event
+      const timeElapsed = currentTime - latestEventTime.getTime();
+      const hoursElapsed = Math.floor(timeElapsed / (1000 * 60 * 60));
+
+      // Determine the appropriate reminder message based on the hours elapsed
+      let dynamicReminderMessage;
+      if (hoursElapsed >= 48) {
+        dynamicReminderMessage = `It has been more than 48 hours since the review was requested. Please prioritize reviewing this PR.`;
+      } else if (hoursElapsed >= 24) {
+        dynamicReminderMessage = `It has been more than 24 hours since the review was requested. Please prioritize reviewing this PR.`;
+      } else {
+        dynamicReminderMessage = `It has been more than ${hoursElapsed} hours since the review was requested. Please prioritize reviewing this PR.`;
+      }
+
       // Post individual comments to each reviewer who has not reviewed or commented
       for (const reviewer of reviewersToRemind) {
-        const addReminderComment = `@${reviewer.login} \n${reminderMessage}`;
+        const addReminderComment = `@${reviewer.login} \nReminder: ${dynamicReminderMessage}`;
 
         // Post the reminder comment to the pull request
         await octokit.rest.issues.createComment({
