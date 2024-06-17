@@ -353,7 +353,6 @@
 
 // // Run the main function
 // run();
-
 // Import required modules from GitHub Actions toolkit
 const core = require("@actions/core");
 const github = require("@actions/github");
