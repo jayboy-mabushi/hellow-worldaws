@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: postgresql
+data:
+  init-db.sh: |
+    #!/bin/bash
+    if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then
+      for db in $(echo $POSTGRES_MULTIPLE_DATABASES | tr ',' ' '); do
+        echo "Checking database: $db"
+        DB_EXISTENCE=$(psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM pg_database WHERE datname='$db'")
+        if [ "$DB_EXISTENCE" != "1" ]; then
+          echo "Database $db does not exist. Creating now..."
+          psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE $db;"
+          echo "Database $db created successfully."
+        else
+          echo "Database $db already exists. Skipping creation."
+        fi
+      done
+    else
+      echo "No additional databases specified in POSTGRES_MULTIPLE_DATABASES."
+    fi
+
+    # Start the PostgreSQL server after initializing databases
+    exec docker-entrypoint.sh postgres
