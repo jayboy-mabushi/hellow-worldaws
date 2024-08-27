@@ -24,3 +24,18 @@ data:
 
     # Start the PostgreSQL server after initializing databases
     exec docker-entrypoint.sh postgres
+
+
+
+  command: ["/bin/bash", "-c"]
+  args:
+  - |
+    echo "Waiting for PostgreSQL to be ready...";
+    until /usr/psgsq-8/home/pg_isready -h postgres-svc -p 5432 -U "$POSTGRES_USER"; do
+      sleep 5;
+    done;
+    echo "PostgreSQL is ready. Running SQL script to create databases...";
+    psql -U "$POSTGRES_USER" -h postgres-svc -p 5432 -f /scripts/create-databases.sql
+  volumeMounts:
+  - name: script-volume
+    mountPath: /scripts
