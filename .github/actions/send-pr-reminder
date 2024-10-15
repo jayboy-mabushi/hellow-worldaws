@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: generate-rds-token
+  namespace: default
+spec:
+  schedule: "*/10 * * * *" # Run every 10 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: generate-rds-token
+            image: amazonlinux:2 # Or any other image with AWS CLI installed
+            command: ["/bin/bash", "-c"]
+            args:
+            - >
+              DB_PASSWORD=$(aws rds generate-db-auth-token --hostname $(DB_HOST) --port 5432 --region $(AWS_REGION) --username $(DB_USERNAME)); echo $DB_PASSWORD > /mnt/token/db_token.txt;  # Write the token to a shared volume
+            env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: jmdr
+                  key: DB_HOST
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: jmdr
+                  key: DB_USERNAME
+            - name: AWS_REGION
+              value: "us-east-1"
+            volumeMounts:
+            - name: shared-token-volume
+              mountPath: /mnt/token
+          restartPolicy: OnFailure
+      volumes:
+      - name: shared-token-volume
+        emptyDir: {}
