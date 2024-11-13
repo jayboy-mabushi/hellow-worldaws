@@ -1,0 +1,10 @@
+{{/*
+Helper to select environment variables based on NODE_ENV.
+*/}}
+{{- define "myapp.envVars" -}}
+{{- if eq .Values.env.NODE_ENV "production" -}}
+{{- toYaml .Values.env.production | indent 12 -}}
+{{- else -}}
+{{- toYaml .Values.env.test | indent 12 -}}
+{{- end -}}
+{{- end -}}
