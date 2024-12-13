@@ -2,7 +2,7 @@ name: PR Review Reminder
 
 on:
   schedule:
-  - cron: "0 12,22  * * 1-5" # Runs every 5 minutes for testing
+  - cron: "0 12,22 * * * *" # Runs every 5 minutes for testing
   workflow_dispatch:
 
 
@@ -13,19 +13,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: set up node.js
-      uses: actions/checkout@v3
-      with:
-        node-version: "16"
-
-    - name: install dependencies for action
-      run: |
-        cd ./.github/actions/send-pr-reminders
-        npm ci 
-
     - name: Send PR Review Reminders
       uses: ./.github/actions/send-pr-reminders
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         # reminder_message: 'Please review this PR.'
-        review_turnaround_hours: 24
+        review_turnaround_minutes: 1
