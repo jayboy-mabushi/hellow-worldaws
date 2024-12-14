@@ -210,7 +210,6 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 
-// Function to calculate business days between two dates
 function businessDaysDiff(startDate, endDate) {
   let count = 0;
   let curDate = new Date(startDate);
@@ -229,7 +228,6 @@ function businessDaysDiff(startDate, endDate) {
   return count;
 }
 
-// Main function to run the action
 async function run() {
   try {
     const octokit = github.getOctokit(process.env.GITHUB_TOKEN); // Use GITHUB_TOKEN from environment
@@ -291,15 +289,20 @@ async function run() {
         continue;
       }
 
-      // Send notification to reviewers who have not engaged
-      for (const reviewer of reviewersToRemind) {
-        const reminderMessage = `@${reviewer.login} It has been more than ${businessDaysPassed} business days since the review was assigned. Please prioritize reviewing this PR.`;
-        await octokit.rest.issues.createComment({
+      const reviewersToNotify = reviewersToRemind.map((reviewer) => reviewer.login);
+      core.info(`Notifying reviewers: ${reviewersToNotify.join(", ")}`);
+
+      // Re-request reviews to notify defaulters
+      try {
+        await octokit.rest.pulls.requestReviewers({
           ...github.context.repo,
-          issue_number: pr.number,
-          body: reminderMessage,
+          pull_number: pr.number,
+          reviewers: reviewersToNotify,
         });
-        core.info(`Sent reminder to @${reviewer.login} for PR: ${pr.title}`);
+
+        core.info(`Successfully notified reviewers: ${reviewersToNotify.join(", ")} for PR: ${pr.title}`);
+      } catch (error) {
+        core.error(`Failed to re-request reviewers: ${error.message}`);
       }
     }
   } catch (error) {
