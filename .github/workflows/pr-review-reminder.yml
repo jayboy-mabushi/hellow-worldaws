@@ -55,7 +55,7 @@ permissions:
 
 jobs:
   send-reminders:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -64,10 +64,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '16'
-
-    - name: Install Dependencies
-      run: npm install
-      working-directory: .github/actions/send-pr-reminders
 
     - name: Run PR Reminder
       run: |
