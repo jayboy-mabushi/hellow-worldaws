@@ -20,13 +20,38 @@
 #         review_turnaround_hours: 1
 #testing
 
+# name: PR Review Reminder
+
+# on:
+#   schedule:
+#   - cron: "*/30 * * * *" # Runs every 5 minutes for testing
+#   workflow_dispatch:
+
+# jobs:
+#   send-reminders:
+#     runs-on: self-hosted
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v2
+
+#     - name: Send PR Review Reminders
+#       uses: ./.github/actions/send-pr-reminders
+#       with:
+#         github_token: ${{ secrets.GITHUB_TOKEN }}
+#         # reminder_message: 'Please review this PR.'
+#         review_turnaround_minutes: 1
+
 name: PR Review Reminder
 
 on:
   schedule:
-  - cron: "*/30 * * * *" # Runs every 5 minutes for testing
+  - cron: "0 8,17 * * 1-5" # Run at 8 AM and 5 PM UTC, Monday to Friday
   workflow_dispatch:
 
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   send-reminders:
@@ -35,9 +60,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Send PR Review Reminders
-      uses: ./.github/actions/send-pr-reminders
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        # reminder_message: 'Please review this PR.'
-        review_turnaround_minutes: 1
+    # - name: Set up Node.js
+    #   uses: actions/setup-node@v3
+    #   with:
+    #     node-version: '16'
+
+    - name: Run PR Reminder
+      run: |
+        node .github/actions/send-pr-reminders/index.js
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

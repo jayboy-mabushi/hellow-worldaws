@@ -280,13 +280,26 @@ async function run() {
       const reviewersToNotify = reviewersToRemind.map((reviewer) => reviewer.login);
       core.info(`Reviewers to notify: ${reviewersToNotify.join(", ")}`);
 
-      await octokit.rest.pulls.requestReviewers({
-        ...github.context.repo,
-        pull_number: pr.number,
-        reviewers: reviewersToNotify,
-      });
+      // Remove and re-add reviewers to ensure notification is sent
+      try {
+        core.info(`Removing reviewers: ${reviewersToNotify.join(", ")}`);
+        await octokit.rest.pulls.removeRequestedReviewers({
+          ...github.context.repo,
+          pull_number: pr.number,
+          reviewers: reviewersToNotify,
+        });
 
-      core.info(`Re-requested reviews from: ${reviewersToNotify.join(", ")} for PR: ${pr.title}`);
+        core.info(`Re-adding reviewers: ${reviewersToNotify.join(", ")}`);
+        await octokit.rest.pulls.requestReviewers({
+          ...github.context.repo,
+          pull_number: pr.number,
+          reviewers: reviewersToNotify,
+        });
+
+        core.info(`Successfully notified reviewers: ${reviewersToNotify.join(", ")} for PR: ${pr.title}`);
+      } catch (error) {
+        core.error(`Failed to re-request reviewers: ${error.message}`);
+      }
     }
   } catch (error) {
     core.setFailed(error.message);
