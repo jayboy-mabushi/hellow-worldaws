@@ -207,91 +207,79 @@
 // // Run the main function
 // run();
 
+
+
 const core = require("@actions/core");
 const github = require("@actions/github");
 
-// Function to calculate business days between two dates
 function businessDaysDiff(startDate, endDate) {
   let count = 0;
   let curDate = new Date(startDate);
 
-  // Ensure startDate is always before or equal to endDate
   if (curDate > endDate) {
-    return 0; // No business days if the start date is after the end date
+    return 0; 
   }
 
-  // Loop through each day between the start and end dates
   while (curDate <= endDate) {
     const dayOfWeek = curDate.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       count++;
     }
     curDate.setDate(curDate.getDate() + 1);
   }
-
   return count;
 }
 
-// Main function to run the action
 async function run() {
   try {
-    // Get the GitHub token from the input
     const octokit = github.getOctokit(core.getInput("github_token"));
-    // Get the review turnaround time in hours from the input and parse it as an integer
     const reviewTurnaroundHours = parseInt(core.getInput("review_turnaround_hours"), 10);
-
-    // Convert hours to working days (assuming 8-hour workdays)
     const reviewTurnaroundDays = Math.ceil(reviewTurnaroundHours / 8);
 
-    // List all open pull requests in the repository
     const { data: pullRequests } = await octokit.rest.pulls.list({
       ...github.context.repo,
       state: "open",
     });
 
-    // Loop through each pull request
     for (const pr of pullRequests) {
       core.info(`Processing PR: ${pr.title}`);
 
-      // Get detailed information about the pull request
       const { data: pullRequest } = await octokit.rest.pulls.get({
         ...github.context.repo,
         pull_number: pr.number,
       });
 
-      // List reviews to check which reviewers have already reviewed
       const { data: reviews } = await octokit.rest.pulls.listReviews({
         ...github.context.repo,
         pull_number: pr.number,
       });
 
-      // Get reviewers who have already reviewed
       const reviewersWhoReviewed = reviews.map((review) => review.user.login);
+      core.info(`Reviewers who reviewed: ${reviewersWhoReviewed.join(", ")}`);
 
-      // Filter requested reviewers to only include those who have not reviewed
       const reviewersToRemind = pullRequest.requested_reviewers.filter(
         (reviewer) => !reviewersWhoReviewed.includes(reviewer.login)
       );
+      core.info(`Reviewers to remind: ${reviewersToRemind.map(r => r.login).join(", ")}`);
 
-      // If there are no reviewers to remind, skip this pull request
       if (reviewersToRemind.length === 0) {
         core.info(`No reviewers to remind for PR: ${pr.title}`);
         continue;
       }
 
-      // Calculate business days since the latest commit
       const latestCommitTime = new Date(pr.updated_at);
       const currentTime = new Date();
       const businessDaysPassed = businessDaysDiff(latestCommitTime, currentTime);
+      core.info(`Business days passed: ${businessDaysPassed}`);
 
-      // Skip if the business days passed are less than the turnaround time
       if (businessDaysPassed < reviewTurnaroundDays) {
         core.info(`Turnaround time not yet exceeded for PR: ${pr.title}`);
         continue;
       }
 
-      // Notify the reviewers by re-requesting their reviews
       const reviewersToNotify = reviewersToRemind.map((reviewer) => reviewer.login);
+      core.info(`Reviewers to notify: ${reviewersToNotify.join(", ")}`);
+
       await octokit.rest.pulls.requestReviewers({
         ...github.context.repo,
         pull_number: pr.number,
@@ -301,10 +289,8 @@ async function run() {
       core.info(`Re-requested reviews from: ${reviewersToNotify.join(", ")} for PR: ${pr.title}`);
     }
   } catch (error) {
-    // If there is an error, set the action to failed and log the error message
     core.setFailed(error.message);
   }
 }
 
-// Run the main function
 run();
