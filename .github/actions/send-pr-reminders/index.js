@@ -208,7 +208,6 @@
 // run();
 
 
-
 const core = require("@actions/core");
 const github = require("@actions/github");
 
@@ -222,7 +221,7 @@ function businessDaysDiff(startDate, endDate) {
 
   while (curDate <= endDate) {
     const dayOfWeek = curDate.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
       count++;
     }
     curDate.setDate(curDate.getDate() + 1);
@@ -232,7 +231,7 @@ function businessDaysDiff(startDate, endDate) {
 
 async function run() {
   try {
-    const octokit = github.getOctokit(core.getInput("github_token"));
+    const octokit = github.getOctokit(process.env.GITHUB_TOKEN); // Use GITHUB_TOKEN from environment
     const reviewTurnaroundHours = parseInt(core.getInput("review_turnaround_hours"), 10);
     const reviewTurnaroundDays = Math.ceil(reviewTurnaroundHours / 8);
 

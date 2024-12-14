@@ -65,6 +65,10 @@ jobs:
       with:
         node-version: '16'
 
+    - name: Install Dependencies
+      run: npm install
+      working-directory: .github/actions/send-pr-reminders
+
     - name: Run PR Reminder
       run: |
         node .github/actions/send-pr-reminders/index.js
