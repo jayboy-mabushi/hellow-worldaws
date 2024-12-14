@@ -207,16 +207,16 @@
 // // Run the main function
 // run();
 
-
 const core = require("@actions/core");
 const github = require("@actions/github");
 
+// Function to calculate business days between two dates
 function businessDaysDiff(startDate, endDate) {
   let count = 0;
   let curDate = new Date(startDate);
 
   if (curDate > endDate) {
-    return 0; 
+    return 0;
   }
 
   while (curDate <= endDate) {
@@ -229,6 +229,7 @@ function businessDaysDiff(startDate, endDate) {
   return count;
 }
 
+// Main function to run the action
 async function run() {
   try {
     const octokit = github.getOctokit(process.env.GITHUB_TOKEN); // Use GITHUB_TOKEN from environment
@@ -253,11 +254,24 @@ async function run() {
         pull_number: pr.number,
       });
 
-      const reviewersWhoReviewed = reviews.map((review) => review.user.login);
-      core.info(`Reviewers who reviewed: ${reviewersWhoReviewed.join(", ")}`);
+      const { data: comments } = await octokit.rest.issues.listComments({
+        ...github.context.repo,
+        issue_number: pr.number,
+      });
 
+      // Reviewers who have reviewed or approved
+      const reviewersWhoReviewed = reviews.map((review) => review.user.login);
+
+      // Reviewers who have commented
+      const commenters = comments.map((comment) => comment.user.login);
+
+      // Combine reviewers who have engaged (reviewed or commented)
+      const reviewersWhoEngaged = [...new Set([...reviewersWhoReviewed, ...commenters])];
+      core.info(`Reviewers who engaged: ${reviewersWhoEngaged.join(", ")}`);
+
+      // Identify reviewers to remind
       const reviewersToRemind = pullRequest.requested_reviewers.filter(
-        (reviewer) => !reviewersWhoReviewed.includes(reviewer.login)
+        (reviewer) => !reviewersWhoEngaged.includes(reviewer.login)
       );
       core.info(`Reviewers to remind: ${reviewersToRemind.map(r => r.login).join(", ")}`);
 
@@ -266,6 +280,7 @@ async function run() {
         continue;
       }
 
+      // Calculate business days since the review was requested
       const latestCommitTime = new Date(pr.updated_at);
       const currentTime = new Date();
       const businessDaysPassed = businessDaysDiff(latestCommitTime, currentTime);
@@ -276,28 +291,15 @@ async function run() {
         continue;
       }
 
-      const reviewersToNotify = reviewersToRemind.map((reviewer) => reviewer.login);
-      core.info(`Reviewers to notify: ${reviewersToNotify.join(", ")}`);
-
-      // Remove and re-add reviewers to ensure notification is sent
-      try {
-        core.info(`Removing reviewers: ${reviewersToNotify.join(", ")}`);
-        await octokit.rest.pulls.removeRequestedReviewers({
+      // Send notification to reviewers who have not engaged
+      for (const reviewer of reviewersToRemind) {
+        const reminderMessage = `@${reviewer.login} It has been more than ${businessDaysPassed} business days since the review was assigned. Please prioritize reviewing this PR.`;
+        await octokit.rest.issues.createComment({
           ...github.context.repo,
-          pull_number: pr.number,
-          reviewers: reviewersToNotify,
+          issue_number: pr.number,
+          body: reminderMessage,
         });
-
-        core.info(`Re-adding reviewers: ${reviewersToNotify.join(", ")}`);
-        await octokit.rest.pulls.requestReviewers({
-          ...github.context.repo,
-          pull_number: pr.number,
-          reviewers: reviewersToNotify,
-        });
-
-        core.info(`Successfully notified reviewers: ${reviewersToNotify.join(", ")} for PR: ${pr.title}`);
-      } catch (error) {
-        core.error(`Failed to re-request reviewers: ${error.message}`);
+        core.info(`Sent reminder to @${reviewer.login} for PR: ${pr.title}`);
       }
     }
   } catch (error) {
