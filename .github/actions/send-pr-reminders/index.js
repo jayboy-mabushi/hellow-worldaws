@@ -295,7 +295,7 @@ async function run() {
       const reviewersToNotify = reviewersToRemind.map((reviewer) => reviewer.login);
       core.info(`Notifying reviewers: ${reviewersToNotify.join(", ")}`);
 
-      // Remove and re-add reviewers to force notifications
+      // Force notifications by removing and re-adding reviewers
       try {
         core.info(`Removing reviewers: ${reviewersToNotify.join(", ")}`);
         await octokit.rest.pulls.removeRequestedReviewers({
@@ -311,16 +311,7 @@ async function run() {
           reviewers: reviewersToNotify,
         });
 
-        // Send personalized reminders via comments
-        for (const reviewer of reviewersToNotify) {
-          const reminderMessage = `@${reviewer} It has been more than ${businessDaysPassed} business days since the review was requested. Please prioritize reviewing this PR.`;
-          await octokit.rest.issues.createComment({
-            ...github.context.repo,
-            issue_number: pr.number,
-            body: reminderMessage,
-          });
-          core.info(`Sent reminder to @${reviewer}`);
-        }
+        core.info(`Successfully notified reviewers: ${reviewersToNotify.join(", ")} for PR: ${pr.title}`);
       } catch (error) {
         core.error(`Failed to re-request reviewers: ${error.message}`);
       }
