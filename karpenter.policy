@@ -1,0 +1,138 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    /* ──────────────────────────────
+       Core Karpenter controller actions
+       ────────────────────────────── */
+    {
+      "Sid": "KarpenterCore",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ec2:DescribeImages",
+        "ec2:RunInstances",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeLaunchTemplates",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeInstanceTypeOfferings",
+        "ec2:DeleteLaunchTemplate",
+        "ec2:CreateTags",
+        "ec2:CreateLaunchTemplate",
+        "ec2:CreateFleet",
+        "ec2:DescribeSpotPriceHistory",
+        "pricing:GetProducts"
+      ],
+      "Resource": "*"
+    },
+
+    /* ──────────────────────────────
+       Let Karpenter terminate *only*
+       nodes it created itself
+       ────────────────────────────── */
+    {
+      "Sid": "ConditionalEC2Termination",
+      "Effect": "Allow",
+      "Action": "ec2:TerminateInstances",
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "ec2:ResourceTag/karpenter.sh/nodepool": "*"
+        }
+      }
+    },
+
+    /* ──────────────────────────────
+       Pass the *node* role Karpenter
+       attaches to new EC2 instances
+       ────────────────────────────── */
+    {
+      "Sid": "PassNodeIAMRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/KarpenterNodeRole-<CLUSTER_NAME>"
+    },
+
+    /* ──────────────────────────────
+       Needed once at startup so the
+       controller can discover the
+       cluster endpoint CA bundle.
+       ────────────────────────────── */
+    {
+      "Sid": "EKSClusterEndpointLookup",
+      "Effect": "Allow",
+      "Action": "eks:DescribeCluster",
+      "Resource": "arn:aws:eks:<AWS_REGION>:<ACCOUNT_ID>:cluster/<CLUSTER_NAME>"
+    },
+
+    /* ──────────────────────────────
+       Optional: let Karpenter create
+       *scoped* Instance Profiles for
+       EC2NodeClass-level roles.
+       ────────────────────────────── */
+    {
+      "Sid": "AllowScopedInstanceProfileCreationActions",
+      "Effect": "Allow",
+      "Action": "iam:CreateInstanceProfile",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/kubernetes.io/cluster/<CLUSTER_NAME>": "owned",
+          "aws:RequestTag/topology.kubernetes.io/region": "<AWS_REGION>"
+        },
+        "StringLike": {
+          "aws:RequestTag/karpenter.k8s.aws/ec2nodeclass": "*"
+        }
+      }
+    },
+    {
+      "Sid": "AllowScopedInstanceProfileTagActions",
+      "Effect": "Allow",
+      "Action": "iam:TagInstanceProfile",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/kubernetes.io/cluster/<CLUSTER_NAME>": "owned",
+          "aws:ResourceTag/topology.kubernetes.io/region": "<AWS_REGION>",
+          "aws:RequestTag/kubernetes.io/cluster/<CLUSTER_NAME>": "owned",
+          "aws:RequestTag/topology.kubernetes.io/region": "<AWS_REGION>"
+        },
+        "StringLike": {
+          "aws:ResourceTag/karpenter.k8s.aws/ec2nodeclass": "*",
+          "aws:RequestTag/karpenter.k8s.aws/ec2nodeclass": "*"
+        }
+      }
+    },
+    {
+      "Sid": "AllowScopedInstanceProfileActions",
+      "Effect": "Allow",
+      "Action": [
+        "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:DeleteInstanceProfile"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/kubernetes.io/cluster/<CLUSTER_NAME>": "owned",
+          "aws:ResourceTag/topology.kubernetes.io/region": "<AWS_REGION>"
+        },
+        "StringLike": {
+          "aws:ResourceTag/karpenter.k8s.aws/ec2nodeclass": "*"
+        }
+      }
+    },
+
+    /* ──────────────────────────────
+       Read-only for any profiles the
+       controller might manage.
+       ────────────────────────────── */
+    {
+      "Sid": "AllowInstanceProfileReadActions",
+      "Effect": "Allow",
+      "Action": "iam:GetInstanceProfile",
+      "Resource": "*"
+    }
+  ]
+}
